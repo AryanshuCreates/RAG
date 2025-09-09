@@ -61,9 +61,9 @@ AWS_REGION=us-east-1
 👉 Step 1 — Create a Python Virtual Environment
 
 - Powershell
+  Ingest service (FastAPI) setup
 
-# Ingest service (FastAPI) setup
-
+```ini
 cd ingest
 python -m venv .venv
 .venv\Scripts\activate # (PowerShell on Windows)
@@ -71,35 +71,41 @@ python -m venv .venv
 # source .venv/bin/activate # (Mac/Linux)
 
 pip install -r requirements.txt
+```
 
-# 👉 Step 2 — Run ChromaDB (Vector DB)
+👉 Step 2 — Run ChromaDB (Vector DB)
 
 - bash
 
 # Start a local Chroma DB server
 
+```ini
 docker run -d --name chroma -p 8001:8000 -v ./chroma_data:/data chromadb/chroma:latest
-
-# 👉 Step 3 — Run the Ingest Service
-
-- bash
-  uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# 👉 Step 4 — Run the Backend (Node.js + Express)
-
-- bash
-
 ```
+
+👉 Step 3 — Run the Ingest Service
+
+- bash
+
+```ini
+  uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+👉 Step 4 — Run the Backend (Node.js + Express)
+
+- bash
+
+```ini
   cd backend
   npm install
   npm run dev # or npm start
 ```
 
-# 👉 Step 5 — Run the Frontend (React + Vite)
+👉 Step 5 — Run the Frontend (React + Vite)
 
 - bash
 
-```
+```ini
   cd frontend
   npm install
   npm run dev
@@ -119,7 +125,7 @@ docker run -d --name chroma -p 8001:8000 -v ./chroma_data:/data chromadb/chroma:
 
 - bash
 
-```
+```ini
   docker-compose up --build
 ```
 
@@ -130,9 +136,12 @@ This will start all services (frontend, backend, ingest, chroma) together.
 1. Provision infra:
 
 - bash
+
+```ini
   cd infra
   terraform init
   terraform apply
+```
 
 Creates:
 
@@ -160,7 +169,7 @@ Creates:
 
 ## js
 
-```
+```ini
 const auth = require("./middleware/auth");
 app.use("/secure", auth, secureRoutes);
 
@@ -168,7 +177,8 @@ app.use("/secure", auth, secureRoutes);
 
 - Use with:
 
-```Authorization: Bearer <token>
+```ini
+Authorization: Bearer <token>
 
 ```
 
