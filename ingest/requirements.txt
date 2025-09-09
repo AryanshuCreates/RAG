@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pdfplumber
+pydantic>=2
+sentence-transformers
+chromadb>=0.5.5
+langchain>=0.2
+openai>=1.30.0
+tiktoken
+requests

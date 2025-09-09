@@ -1,0 +1,19 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: #f7f7f9;
+  color: #111;
+}
+input,
+button {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+button {
+  cursor: pointer;
+}
