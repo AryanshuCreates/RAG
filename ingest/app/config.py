@@ -12,7 +12,7 @@ class Settings(BaseModel):
 
     # Vector store / Chroma
     collection_name: str = os.getenv("COLLECTION_NAME", "rag_collection")
-    chroma_server_url: str | None = os.getenv("CHROMA_URL")  # e.g., http://chroma:8001 inside Docker
+    chroma_server_url:str | None = os.getenv("CHROMA_SERVER_URL")  # e.g., http://chroma:8001 inside Docker
     persist_directory: str = os.getenv("CHROMA_DB_PATH", "./chroma_data")  # local fallback
 
     # Retrieval

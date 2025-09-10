@@ -1,33 +1,35 @@
 from typing import List, Dict, Any
 import uuid
-import os
-from urllib.parse import urlparse
-from chromadb import HttpClient, PersistentClient
+from chromadb import Client
 from chromadb.config import Settings as ChromaSettings
 from .config import settings
 from .embedder import embed_query
 
-
 class VectorStore:
     def __init__(self):
         if settings.chroma_server_url:
-            # Parse URL in case it's like http://chroma:8000
-            parsed = urlparse(settings.chroma_server_url)
-            host = parsed.hostname or settings.chroma_server_url
-            port = parsed.port or 8000
-            self.client = HttpClient(host=host, port=port)
-            print(f"[VectorStore] Using Chroma HTTP server at {host}:{port}")
+            # Use HTTP client with the latest Chroma API
+            self.client = Client(
+                Settings=ChromaSettings(
+                    chroma_api_impl="rest",
+                    chroma_server_host=settings.chroma_server_url.split("://")[-1].split(":")[0],
+                    chroma_server_http_port=int(settings.chroma_server_url.split(":")[-1])
+                )
+            )
+            print(f"[VectorStore] Using Chroma REST server at {settings.chroma_server_url}")
         else:
             persist_path = settings.persist_directory or "./chroma_data"
-            self.client = PersistentClient(
-                path=persist_path,
-                settings=ChromaSettings(is_persistent=True)
+            self.client = Client(
+                Settings=ChromaSettings(
+                    chroma_db_impl="duckdb+parquet",
+                    persist_directory=persist_path,
+                    is_persistent=True
+                )
             )
-            print(f"[VectorStore] Using local Chroma PersistentClient at {persist_path}")
+            print(f"[VectorStore] Using local PersistentClient at {persist_path}")
 
         self.collection = self.client.get_or_create_collection(
-            name=settings.collection_name,
-            metadata={"hnsw:space": "cosine"}
+            name=settings.collection_name
         )
 
     def upsert(self, chunks: List[Dict], embeddings: List[List[float]], source_filename: str) -> int:
@@ -57,7 +59,7 @@ class VectorStore:
             include=["documents", "metadatas", "distances", "embeddings"]
         )
         hits: List[Dict[str, Any]] = []
-        for i in range(len(res["ids"][0])):  # Chroma returns lists-of-lists
+        for i in range(len(res["ids"][0])):
             hits.append({
                 "id": res["ids"][0][i],
                 "score": 1 - res["distances"][0][i] if res.get("distances") else 0.0,
@@ -65,6 +67,5 @@ class VectorStore:
                 "metadata": res["metadatas"][0][i] or {},
             })
         return hits
-
 
 store = VectorStore()
