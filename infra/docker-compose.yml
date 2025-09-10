@@ -5,17 +5,15 @@ services:
     build: ./frontend
     container_name: rag_frontend
     ports:
-      - "3000:3000"
+      - "80:80" # 👈 only service exposed publicly
     environment:
-      - VITE_API_URL=http://localhost:4000
+      - VITE_API_URL=http://backend:4000
     depends_on:
       - backend
 
   backend:
     build: ./backend
     container_name: rag_backend
-    ports:
-      - "4000:4000"
     environment:
       - PORT=4000
       - INGEST_URL=http://ingest:8000
@@ -25,25 +23,19 @@ services:
   ingest:
     build: ./ingest
     container_name: rag_ingest
-    ports:
-      - "8000:8000"
     volumes:
-      - chroma_data:/data
+      - /data/chroma:/data # 👈 bind to EBS mount
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-      - CHROMA_URL=http://chroma:8001 # 👈 tell ingest to connect via HTTP
+      - CHROMA_URL=http://chroma:8001
     depends_on:
       - chroma
 
   chroma:
     image: ghcr.io/chroma-core/chroma:latest
     container_name: rag_chroma
-    ports:
-      - "8001:8001"
     volumes:
-      - chroma_data:/data
+      - /data/chroma:/data # 👈 same EBS-backed directory
     command: ["--path", "/data", "--host", "0.0.0.0", "--port", "8001"]
-
-volumes:
-  chroma_data:
+#  using host-mounted EBS

@@ -12,11 +12,11 @@ data "aws_ami" "amazon_linux2" {
 # --- Security group ---
 resource "aws_security_group" "rag_sg" {
   name        = "rag-mvp-sg"
-  description = "Allow HTTP and SSH"
+  description = "Allow HTTP (frontend) and SSH"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description = "HTTP"
+    description = "HTTP for frontend"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -43,7 +43,7 @@ resource "aws_security_group" "rag_sg" {
   }
 }
 
-# --- VPC data to pick default VPC (common in accounts) ---
+# --- VPC/Subnet ---
 data "aws_vpc" "default" {
   default = true
 }
@@ -52,11 +52,22 @@ data "aws_subnet_ids" "default" {
   vpc_id = data.aws_vpc.default.id
 }
 
+# --- EBS volume ---
+resource "aws_ebs_volume" "chroma_data" {
+  availability_zone = element(data.aws_subnet_ids.default.ids, 0)
+  size              = 20 # GB (adjust as needed)
+  type              = "gp3"
+
+  tags = {
+    Name = "chroma-data-volume"
+  }
+}
+
 # --- EC2 instance ---
 resource "aws_instance" "app" {
-  ami           = var.ami != "" ? var.ami : data.aws_ami.amazon_linux2.id
-  instance_type = var.instance_type
-  subnet_id     = length(data.aws_subnet_ids.default.ids) > 0 ? data.aws_subnet_ids.default.ids[0] : null
+  ami                    = var.ami != "" ? var.ami : data.aws_ami.amazon_linux2.id
+  instance_type          = var.instance_type
+  subnet_id              = length(data.aws_subnet_ids.default.ids) > 0 ? data.aws_subnet_ids.default.ids[0] : null
   vpc_security_group_ids = [aws_security_group.rag_sg.id]
 
   # Optional SSH key pair
@@ -66,7 +77,13 @@ resource "aws_instance" "app" {
     Name = "rag-mvp-instance"
   }
 
-  # Basic userdata: install docker and docker-compose (you may expand this)
+  # Attach EBS volume
+  ebs_block_device {
+    device_name = "/dev/xvdf"
+    volume_id   = aws_ebs_volume.chroma_data.id
+  }
+
+  # Userdata: install docker, mount EBS, deploy app
   user_data = <<-EOF
               #!/bin/bash
               set -e
@@ -74,33 +91,21 @@ resource "aws_instance" "app" {
               amazon-linux-extras install docker -y || yum install -y docker
               service docker start
               usermod -a -G docker ec2-user
+
+              # Install docker-compose
               curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               chmod +x /usr/local/bin/docker-compose
+
+              # Mount EBS volume for Chroma persistence
+              mkfs -t xfs /dev/xvdf
+              mkdir -p /data/chroma
+              mount /dev/xvdf /data/chroma
+              echo "/dev/xvdf /data/chroma xfs defaults,nofail 0 2" >> /etc/fstab
+
+              # Clone repo and deploy
+              cd /home/ec2-user
+              git clone https://github.com/your/repo.git rag-app
+              cd rag-app
+              docker-compose up -d
               EOF
-}
-
-# --- S3 bucket for uploads/artifacts ---
-resource "aws_s3_bucket" "uploads" {
-  bucket = var.s3_bucket_name
-  acl    = "private"
-
-  versioning {
-    enabled = true
-  }
-
-  tags = {
-    Name = "rag-mvp-uploads"
-  }
-}
-
-output "instance_id" {
-  value = aws_instance.app.id
-}
-
-output "instance_public_ip" {
-  value = aws_instance.app.public_ip
-}
-
-output "s3_bucket" {
-  value = aws_s3_bucket.uploads.bucket
 }
