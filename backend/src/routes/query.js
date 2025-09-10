@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 
 const router = express.Router();
-const INGEST_URL = process.env.INGEST_URL || "http://127.0.0.1:8000";
+const INGEST_URL = process.env.INGEST_URL || "http://52.91.193.238:8000";
 
 router.post("/", async (req, res) => {
   const { question } = req.body || {};

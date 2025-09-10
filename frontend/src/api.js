@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+const BACKEND =
+  import.meta.env.VITE_BACKEND_URL || "http://52.91.193.238/:4000";
 
 export async function uploadFile(file) {
   const form = new FormData();
