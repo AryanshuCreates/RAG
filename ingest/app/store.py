@@ -26,23 +26,18 @@ class VectorStore:
 
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=k
+            n_results=k,
+            include=["documents", "metadatas", "distances", "ids"]
         )
 
         hits = []
-        if results and "documents" in results:
-            docs = results["documents"][0]
-            ids = results["ids"][0]
-            metas = results["metadatas"][0]
-            dists = results.get("distances", [[None]])[0]
-
-            for i in range(len(docs)):
-                hits.append({
-                    "id": ids[i],
-                    "text": docs[i],
-                    "metadata": metas[i],
-                    "distance": dists[i]
-                })
+        for i in range(len(results["ids"][0])):
+            hits.append({
+                "id": results["ids"][0][i],
+                "text": results["documents"][0][i],
+                "metadata": results["metadatas"][0][i] or {},
+                "distance": results["distances"][0][i]  # maps to the Pydantic model
+            })
         return hits
 
 # singleton
