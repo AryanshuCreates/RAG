@@ -1,6 +1,4 @@
 version: "3.9"
-env_file:
-  - ../.env
 
 services:
   frontend:
@@ -18,6 +16,8 @@ services:
     container_name: rag_backend
     ports:
       - "4000:4000"
+    env_file:
+      - ../.env
     environment:
       - PORT=4000
       - INGEST_URL=http://ingest:8000
@@ -31,6 +31,8 @@ services:
       - "8000:8000"
     volumes:
       - /data/chroma:/data # 👈 bind to EBS mount
+    env_file:
+      - ../.env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
