@@ -1,7 +1,8 @@
 from typing import List, Dict, Any
 import uuid
 from urllib.parse import urlparse
-from chromadb import HttpClient
+from chromadb import Client
+from chromadb.config import Settings
 from .config import settings
 from .embedder import embed_query
 
@@ -9,23 +10,23 @@ from .embedder import embed_query
 class VectorStore:
     def __init__(self):
         if settings.chroma_server_url:
-            # parse host and port from CHROMA_URL
+            # Parse host and port
             parsed = urlparse(settings.chroma_server_url)
             host = parsed.hostname
             port = parsed.port or 8000
-            self.client = HttpClient(host=host, port=port)
-            print(f"[VectorStore] Using Chroma HTTP server at {host}:{port}")
+            self.client = Client(settings=Settings(
+                chroma_api_impl="rest",
+                chroma_server_host=host,
+                chroma_server_http_port=port
+            ))
+            print(f"[VectorStore] Using Chroma REST server at {host}:{port}")
         else:
-            from chromadb import Client
-            from chromadb.config import Settings as ChromaSettings
             persist_path = settings.persist_directory or "./chroma_data"
-            self.client = Client(
-                settings=ChromaSettings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory=persist_path,
-                    is_persistent=True
-                )
-            )
+            self.client = Client(settings=Settings(
+                chroma_db_impl="duckdb+parquet",
+                persist_directory=persist_path,
+                is_persistent=True
+            ))
             print(f"[VectorStore] Using local PersistentClient at {persist_path}")
 
         self.collection = self.client.get_or_create_collection(
