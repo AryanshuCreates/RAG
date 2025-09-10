@@ -28,7 +28,7 @@ services:
     build: ../ingest
     container_name: rag_ingest
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - /data/chroma:/data
     env_file:
