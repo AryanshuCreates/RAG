@@ -28,7 +28,22 @@ class VectorStore:
             query_embeddings=[query_embedding],
             n_results=k
         )
-        return results
+
+        hits = []
+        if results and "documents" in results:
+            docs = results["documents"][0]
+            ids = results["ids"][0]
+            metas = results["metadatas"][0]
+            dists = results.get("distances", [[None]])[0]
+
+            for i in range(len(docs)):
+                hits.append({
+                    "id": ids[i],
+                    "text": docs[i],
+                    "metadata": metas[i],
+                    "distance": dists[i]
+                })
+        return hits
 
 # singleton
 store = VectorStore()
