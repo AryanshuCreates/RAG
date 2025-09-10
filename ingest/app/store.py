@@ -27,16 +27,16 @@ class VectorStore:
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=k,
-            include=["documents", "metadatas", "distances", "ids"]
+            include=["documents", "metadatas", "distances"]  # removed 'ids'
         )
 
         hits = []
-        for i in range(len(results["ids"][0])):
+        for i in range(len(results["documents"][0])):
             hits.append({
-                "id": results["ids"][0][i],
+                "id": results["metadatas"][0][i].get("source", f"doc_{i}") + f"_{i}",
                 "text": results["documents"][0][i],
                 "metadata": results["metadatas"][0][i] or {},
-                "distance": results["distances"][0][i]  # maps to the Pydantic model
+                "distance": results["distances"][0][i]  # maps to SourceChunk.distance
             })
         return hits
 
