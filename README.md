@@ -152,7 +152,7 @@ pip install -r requirements.txt
 
 - bash
 
-# Start a local Chroma DB server
+Start a local Chroma DB server
 
 ```ini
 docker run -d --name chroma -p 8001:8000 -v ./chroma_data:/data chromadb/chroma:latest
