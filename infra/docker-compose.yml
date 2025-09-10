@@ -41,9 +41,9 @@ services:
       - chroma
 
   chroma:
-    image: ghcr.io/chroma-core/chroma:latest
-    container_name: rag_chroma
-    volumes:
-      - /data/chroma:/data # 👈 same EBS-backed directory
-    command: ["--path", "/data", "--host", "0.0.0.0", "--port", "8001"]
+  image: ghcr.io/chroma-core/chroma:latest
+  ports:
+    - "8000:8000"
+  volumes:
+    - ./chroma-data:/data
 #  using host-mounted EBS
