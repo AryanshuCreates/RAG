@@ -131,80 +131,53 @@ Go to Repo → Settings → Secrets and variables → Actions and add:
 
 ```
 
-🖥️ Running Locally (Recommended for Dev)
+# 🐳 Deploying on EC2
 
-👉 Step 1 — Create a Python Virtual Environment
+This project can be deployed in **two ways**: manual or automated.
 
-- Powershell
-  Ingest service (FastAPI) setup
+---
 
-```ini
-cd ingest
-python -m venv .venv
-.venv\Scripts\activate # (PowerShell on Windows)
+## 1️⃣ Manual Docker + EC2 Process
 
-# source .venv/bin/activate # (Mac/Linux)
+⚡ **Steps:**
 
-pip install -r requirements.txt
+1. **Provision EC2 & EBS** (via Terraform or manually).
+2. **Install Docker & Docker Compose** on EC2:
+
+````bash
+sudo yum update -y
+sudo amazon-linux-extras install docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+```
+3. **Copy project files:**
+
+.env
+docker-compose.yml
+to the EC2 instance (e.g., via scp):
+
+``` bash
+scp -i my-key.pem docker-compose.yml .env ec2-user@<EC2_IP>:/home/ec2-user/
+````
+
+4. **Run services:**
+
+```bash
+docker-compose up --build -d
 ```
 
-👉 Step 2 — Run ChromaDB (Vector DB)
+5. **Access services:**
 
-- bash
+Service URL
+Frontend http://<EC2_IP>/
+Backend http://<EC2_IP>:4000
+Ingest http://<EC2_IP>:8000
+ChromaDB http://<EC2_IP>:8001
 
-Start a local Chroma DB server
-
-```ini
-docker run -d --name chroma -p 8001:8000 -v ./chroma_data:/data chromadb/chroma:latest
-```
-
-👉 Step 3 — Run the Ingest Service
-
-- bash
-
-```ini
-  uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-👉 Step 4 — Run the Backend (Node.js + Express)
-
-- bash
-
-```ini
-  cd backend
-  npm install
-  npm run dev # or npm start
-```
-
-👉 Step 5 — Run the Frontend (React + Vite)
-
-- bash
-
-```ini
-  cd frontend
-  npm install
-  npm run dev
-```
-
-## 📍 Access the services:
-
-- Frontend → http://localhost:3000
-
-- Backend → http://localhost:4000
-
-- Ingest → http://localhost:8000
-
-- ChromaDB → http://localhost:8001
-
-# 🐳 Running with Docker Compose
-
-- bash
-
-```ini
-  docker-compose up --build
-```
-
-This will start all services (frontend, backend, ingest, chroma) together.
+✅ ChromaDB data persists on mounted EBS volume.
 
 # ☁️ Deploying to Production (Terraform + Docker + GitHub Actions)
 
@@ -249,7 +222,10 @@ This project includes **infrastructure-as-code (Terraform)** and **CI/CD automat
    terraform init
    terraform apply
    ```
-   Copy the EC2 public IP and save it in GitHub Secrets as EC2_IP.
+
+````
+
+Copy the EC2 public IP and save it in GitHub Secrets as EC2_IP.
 
 **🚀 Deployment Workflow**
 
@@ -307,3 +283,4 @@ Authorization: Bearer <token>
 - Infra: ☁️ Terraform (EC2 + S3 + IAM) + 🐳 Docker + ⚙️ Docker Compose
 
 - CI/CD: 🔄 GitHub Actions + 🐳 DockerHub + ☁️ Terraform
+````
