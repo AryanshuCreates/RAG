@@ -5,7 +5,7 @@ services:
     build: ../frontend
     container_name: rag_frontend
     ports:
-      - "80:80" # 👈 only service exposed publicly
+      - "80:80"
     environment:
       - VITE_API_URL=http://backend:4000
     depends_on:
@@ -30,20 +30,19 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /data/chroma:/data # 👈 bind to EBS mount
+      - /data/chroma:/data
     env_file:
       - ../.env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-      - CHROMA_URL=http://chroma:8001
+      - CHROMA_URL=http://chroma:8000
     depends_on:
       - chroma
 
   chroma:
-  image: ghcr.io/chroma-core/chroma:latest
-  ports:
-    - "8000:8000"
-  volumes:
-    - ./chroma-data:/data
-#  using host-mounted EBS
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma-data:/data
