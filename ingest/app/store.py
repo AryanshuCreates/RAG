@@ -6,7 +6,6 @@ from chromadb.config import Settings as ChromaSettings
 from .config import settings
 from .embedder import embed_query
 
-
 class VectorStore:
     def __init__(self):
         if settings.chroma_server_url:
@@ -15,8 +14,8 @@ class VectorStore:
             host = parsed.hostname
             port = parsed.port or 8000
 
-            # Use REST API (v2)
-            self.client = Client(Settings=ChromaSettings(
+            # Use REST API
+            self.client = Client(settings=ChromaSettings(
                 chroma_api_impl="rest",
                 chroma_server_host=host,
                 chroma_server_http_port=port
@@ -24,25 +23,21 @@ class VectorStore:
             print(f"[VectorStore] Using Chroma REST server at {host}:{port}")
 
         else:
-            # Fallback: local persistent mode
+            # Local persistent fallback
             persist_path = settings.persist_directory or "./chroma_data"
-            self.client = Client(Settings=ChromaSettings(
+            self.client = Client(settings=ChromaSettings(
                 chroma_db_impl="duckdb+parquet",
                 persist_directory=persist_path,
                 is_persistent=True
             ))
             print(f"[VectorStore] Using local PersistentClient at {persist_path}")
 
-        # Create collection if it doesn't exist
         self.collection = self.client.get_or_create_collection(
             name=settings.collection_name,
             metadata={"hnsw:space": "cosine"}
         )
 
     def add(self, chunks: List[Dict], embeddings: List[List[float]], source_filename: str) -> int:
-        """
-        Adds new documents to the vector store.
-        """
         ids = [str(uuid.uuid4()) for _ in chunks]
         documents, metadatas = [], []
 
@@ -82,6 +77,4 @@ class VectorStore:
 
         return hits
 
-
-# Instantiate once for the app
 store = VectorStore()
