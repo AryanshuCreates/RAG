@@ -1,8 +1,10 @@
 version: "3.9"
+env_file:
+  - ../.env
 
 services:
   frontend:
-    build: ./frontend
+    build: ../frontend
     container_name: rag_frontend
     ports:
       - "80:80" # 👈 only service exposed publicly
@@ -12,8 +14,10 @@ services:
       - backend
 
   backend:
-    build: ./backend
+    build: ../backend
     container_name: rag_backend
+    ports:
+      - "4000:4000"
     environment:
       - PORT=4000
       - INGEST_URL=http://ingest:8000
@@ -21,8 +25,10 @@ services:
       - ingest
 
   ingest:
-    build: ./ingest
+    build: ../ingest
     container_name: rag_ingest
+    ports:
+      - "8000:8000"
     volumes:
       - /data/chroma:/data # 👈 bind to EBS mount
     environment:
