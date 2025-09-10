@@ -2,19 +2,73 @@
 
 A **Retrieval-Augmented Generation (RAG)** application that allows users to upload documents (`.pdf` / `.txt`), embed them, store embeddings in a vector DB, and query them through a simple web app.
 
+## 🏗️ Architecture
+
+This project follows a **modular Retrieval-Augmented Generation (RAG)** architecture. Each layer is containerized and orchestrated via Docker Compose. Optionally, Terraform provisions infrastructure on AWS.
+
+### Components
+
+1. **Frontend (React + Vite)**
+   - Provides a simple UI for users to upload documents and ask questions.
+   - Connects to the backend API.
+   - Deployed via Docker (served with Nginx in production).
+
+2. **Backend (Express.js)**
+   - Acts as the API gateway.
+   - Routes requests between the frontend, ingest service, and vector database.
+   - Includes middleware for authentication (JWT-ready, not fully implemented).
+   - Exposes:
+     - `/upload` → Send documents to ingestion service.
+     - `/query` → Query stored embeddings and get LLM-generated answers.
+
+3. **Ingest Service (FastAPI)**
+   - Handles:
+     - Document parsing (PDF/TXT).
+     - Chunking into smaller segments.
+     - Embedding generation.
+     - Storing vectors in ChromaDB.
+   - Provides `/ingest` and `/query` endpoints.
+
+4. **Vector Database (ChromaDB)**
+   - Stores embeddings of document chunks.
+   - Performs semantic similarity search for queries.
+   - Runs in a dedicated container with persistent volume.
+
+5. **LLM (via API)**
+   - Large Language Model used for answer generation.
+   - Receives context retrieved from ChromaDB.
+   - Configurable (OpenAI, Anthropic, local model, etc.).
+
+6. **Infrastructure (Optional via Terraform)**
+   - Provisions:
+     - **EC2** → To host the Dockerized app.
+     - **S3** → To store uploaded documents.
+   - Terraform outputs (e.g., EC2 IP) can be wired into GitHub Actions secrets for automation.
+
+7. **CI/CD (GitHub Actions)**
+   - Builds and tests all services.
+   - Builds Docker images.
+   - Deploys to provisioned infrastructure.
+   - Can automatically update services on push.
+
 ---
 
-## 🗂 Project Structure
+### High-Level Flow
 
-RAG/
-├── frontend/ # 🎨 React + Vite frontend
-├── backend/ # ⚡ Express.js backend
-├── ingest/ # 🐍 FastAPI service (embedding + retrieval)
-├── docker-compose.yml
-├── infra/ # ☁️ Terraform IaC (EC2 + S3 + IAM)
-└── .github/workflows/cicd.yml
+1. User uploads `.pdf` or `.txt` via **Frontend**.
+2. **Backend** forwards the file to the **Ingest Service**.
+3. Ingest Service:
+   - Extracts text.
+   - Chunks content.
+   - Generates embeddings.
+   - Stores vectors in **ChromaDB**.
+4. User submits a query.
+5. **Backend** sends query to Ingest Service → retrieves relevant chunks from ChromaDB.
+6. Retrieved context is passed to **LLM API** for final answer generation.
+7. Answer with **source references** is returned to the **Frontend**.
 
----
+
+
 
 ## ⚙️ Features
 
@@ -27,7 +81,7 @@ RAG/
 
 ---
 
-## 🔑 Environment Variables
+## 🔑 1. Environment Variables
 
 Create a **`.env` file** in the project root:
 
@@ -56,6 +110,24 @@ AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
 ```
 
+## 🔒 2. GitHub Actions Secrets (for CI/CD)
+
+Go to Repo → Settings → Secrets and variables → Actions and add:
+
+```ini
+| Secret Name             | Purpose                                                     |
+| ----------------------- | ----------------------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | For Terraform + S3/EC2 provisioning                         |
+| `AWS_SECRET_ACCESS_KEY` | For Terraform + S3/EC2 provisioning                         |
+| `AWS_REGION`            | e.g., `us-east-1`                                           |
+| `DOCKERHUB_USERNAME`    | To push images to DockerHub                                 |
+| `DOCKERHUB_TOKEN`       | DockerHub PAT (not password)                                |
+| `OPENAI_API_KEY`        | Used by ingest service in EC2                               |
+| `JWT_SECRET`            | For backend auth middleware (if enabled)                    |
+| `EC2_IP`                | (Currently manual) used by workflow to know where to deploy |
+
+```
+
 🖥️ Running Locally (Recommended for Dev)
 
 👉 Step 1 — Create a Python Virtual Environment
@@ -77,7 +149,7 @@ pip install -r requirements.txt
 
 - bash
 
-# Start a local Chroma DB server
+Start a local Chroma DB server
 
 ```ini
 docker run -d --name chroma -p 8001:8000 -v ./chroma_data:/data chromadb/chroma:latest
