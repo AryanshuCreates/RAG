@@ -1,49 +1,32 @@
-from typing import List, Dict, Any
-import uuid
-from urllib.parse import urlparse
 from chromadb import Client
 from chromadb.config import Settings
 from .config import settings
 from .embedder import embed_query
-
+import uuid
 
 class VectorStore:
     def __init__(self):
-        if settings.chroma_server_url:
-            # Parse host and port
-            parsed = urlparse(settings.chroma_server_url)
-            host = parsed.hostname
-            port = parsed.port or 8000
-            self.client = Client(settings=Settings(
-                chroma_api_impl="rest",
-                chroma_server_host=host,
-                chroma_server_http_port=port
-            ))
-            print(f"[VectorStore] Using Chroma REST server at {host}:{port}")
-        else:
-            persist_path = settings.persist_directory or "./chroma_data"
-            self.client = Client(settings=Settings(
-                chroma_db_impl="duckdb+parquet",
+        persist_path = settings.persist_directory or "./chroma_data"
+        self.client = Client(
+            settings=Settings(
+                chroma_db_impl="duckdb+parquet",  # only supported mode
                 persist_directory=persist_path,
                 is_persistent=True
-            ))
-            print(f"[VectorStore] Using local PersistentClient at {persist_path}")
+            )
+        )
+        print(f"[VectorStore] Using local PersistentClient at {persist_path}")
 
         self.collection = self.client.get_or_create_collection(
             name=settings.collection_name
         )
 
-    def upsert(self, chunks: List[Dict], embeddings: List[List[float]], source_filename: str) -> int:
+    def upsert(self, chunks, embeddings, source_filename):
         ids = [str(uuid.uuid4()) for _ in chunks]
-        documents, metadatas = [], []
-        for ch in chunks:
-            documents.append(ch["text"])
-            metadatas.append({
-                "source": source_filename,
-                "start": ch.get("start", 0),
-                "end": ch.get("end", 0),
-            })
-
+        documents = [ch["text"] for ch in chunks]
+        metadatas = [
+            {"source": source_filename, "start": ch.get("start", 0), "end": ch.get("end", 0)}
+            for ch in chunks
+        ]
         self.collection.upsert(
             ids=ids,
             embeddings=embeddings,
@@ -52,14 +35,14 @@ class VectorStore:
         )
         return len(ids)
 
-    def query(self, question: str, k: int) -> List[Dict[str, Any]]:
+    def query(self, question, k):
         qv = embed_query(question)
         res = self.collection.query(
             query_embeddings=[qv],
             n_results=k,
             include=["documents", "metadatas", "distances", "embeddings"]
         )
-        hits: List[Dict[str, Any]] = []
+        hits = []
         for i in range(len(res["ids"][0])):
             hits.append({
                 "id": res["ids"][0][i],

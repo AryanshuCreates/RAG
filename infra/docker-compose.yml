@@ -30,19 +30,10 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - /data/chroma:/data
+      - /data/chroma:/data # persistent storage for Chroma
     env_file:
       - ../.env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-      - CHROMA_SERVER_URL=http://chroma:8000
-    depends_on:
-      - chroma
-
-  chroma:
-    image: ghcr.io/chroma-core/chroma:latest
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./chroma-data:/data
+    # removed CHROMA_SERVER_URL and 'depends_on: chroma'
