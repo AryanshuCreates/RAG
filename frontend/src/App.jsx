@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Query from "./components/query";
-import Upload from "./components/upload";
+import Query from "./components/Query";
+import Upload from "./components/Upload";
 
 export default function App() {
   const [lastIngest, setLastIngest] = useState(null);
