@@ -9,7 +9,7 @@ const router = express.Router();
 // const upload = multer({ dest: "/tmp/uploads" });  // for lunix
 const upload = multer({ dest: path.join(__dirname, "../../tmp") }); // for windows
 
-const INGEST_URL = process.env.INGEST_URL || "http://52.91.193.238:8000";
+const INGEST_URL = process.env.INGEST_URL || "http://44.211.81.99:8000";
 
 router.post("/", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "file is required" });
