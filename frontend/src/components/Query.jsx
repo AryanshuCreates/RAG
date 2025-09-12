@@ -52,8 +52,7 @@ export default function Query({ lastIngest }) {
           <ul>
             {result.sources.map((s, i) => (
               <li key={i} style={{ marginBottom: 8 }}>
-                <strong>{s.metadata?.source || "unknown"}</strong> — distance:{" "}
-                {s.distance}
+                <strong>{s.metadata?.source || "unknown"}</strong>
                 <div style={{ fontSize: 13, color: "#333", marginTop: 4 }}>
                   {s.text}
                 </div>
