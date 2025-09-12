@@ -1,6 +1,6 @@
 # 📘 RAG MVP — GenAI + Docker + Terraform + CI/CD
 
-A **Retrieval-Augmented Generation (RAG)** application that allows users to upload documents (`.pdf` / `.txt`), embed them, store embeddings in a vector DB, and query them through a simple web app.
+A **Retrieval-Augmented Generation (RAG)** application that allows users to upload documents (`.pdf` / `.txt`), embed them, store embeddings in a vector DB, and query them through a simple web app. There are some refinements needed on Terraform and ci/cd.
 
 ## 🏗️ Architecture
 
@@ -10,15 +10,15 @@ This project follows a **modular Retrieval-Augmented Generation (RAG)** architec
 
 1. **Frontend (React + Vite)**
 
-   - Provides a simple UI for users to upload documents and ask questions.
+   - Provides a simple UI for users to upload documents and ask questions. (when running on a smaller compute, please upload small docs 5-6 pages)
    - Connects to the backend API.
-   - Deployed via Docker (served with Nginx in production).
+   - Deployed via Docker.
 
-2. **Backend (Express.js)**
+2. **Backend (Express.js)** (kept a separate backend to keep the rag flow standalone and other non-rag features can he added in Node)
 
    - Acts as the API gateway.
    - Routes requests between the frontend, ingest service, and vector database.
-   - Includes middleware for authentication (JWT-ready, not fully implemented).
+   - Includes middleware for authentication (JWT-ready, need to apply on which routes to guard).
    - Exposes:
      - `/upload` → Send documents to ingestion service.
      - `/query` → Query stored embeddings and get LLM-generated answers.
@@ -27,7 +27,7 @@ This project follows a **modular Retrieval-Augmented Generation (RAG)** architec
 
    - Handles:
      - Document parsing (PDF/TXT).
-     - Chunking into smaller segments.
+     - Chunking into smaller segments. (current chunk size is 800 char, overlap is 120 chars)
      - Embedding generation.
      - Storing vectors in ChromaDB.
    - Provides `/ingest` and `/query` endpoints.
@@ -36,15 +36,15 @@ This project follows a **modular Retrieval-Augmented Generation (RAG)** architec
 
    - Stores embeddings of document chunks.
    - Performs semantic similarity search for queries.
-   - Runs in a dedicated container with persistent volume.
+   - persistent volume.
 
 5. **LLM (via API)**
 
-   - Large Language Model used for answer generation.
+   - Large Language Model used for answer generation. (need to add Open AI token in env)
    - Receives context retrieved from ChromaDB.
-   - Configurable (OpenAI, Anthropic, local model, etc.).
+     
 
-6. **Infrastructure (Optional via Terraform)**
+6. **Infrastructure (Optional via Terraform)** (still need work to do)
 
    - Provisions:
      - **EC2** → To host the Dockerized app.
@@ -163,7 +163,7 @@ to the EC2 instance (e.g., via scp):
 scp -i my-key.pem docker-compose.yml .env ec2-user@<EC2_IP>:/home/ec2-user/
 ````
 
-4. **Run services:**
+4. **Run services:** (Docker Compose file is in RAG/infra/docker-compose.yml)
 
 ```bash
 docker-compose up --build -d
