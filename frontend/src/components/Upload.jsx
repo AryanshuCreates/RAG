@@ -16,7 +16,7 @@ export default function Upload({ onIngest }) {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      alert("Upload failed");
+      alert("Upload failed : check for file type and size.");
     }
   }
 

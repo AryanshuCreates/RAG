@@ -41,7 +41,7 @@ async def ingest(file: UploadFile = File(...)):
 async def query(req: QueryRequest):
     try:
         # retrieve similar chunks from vector store
-        hits = store.query(req.question, k=5)
+        hits = store.query(req.question, k=2)
 
         # generate answer using LLM with retrieved context
         answer = generate_answer(req.question, hits)
